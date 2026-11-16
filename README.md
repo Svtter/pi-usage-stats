@@ -2,6 +2,8 @@
 
 A [pi](https://github.com/earendil-works/pi-coding-agent) extension that shows **prompt-cache hit rate** and **output token speed** in the footer status bar, updated after every assistant response.
 
+![pi-usage-stats in the footer](assets/screenshot.png)
+
 ```
 cache 87%/91% · 42.3 tok/s · 1.2k out
 ```
