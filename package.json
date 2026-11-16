@@ -1,9 +1,13 @@
 {
 	"name": "pi-usage-stats",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"description": "Footer status for the pi coding agent: prompt-cache hit rate and output token speed",
 	"keywords": ["pi-package"],
 	"license": "MIT",
+	"type": "module",
+	"scripts": {
+		"test": "node --experimental-strip-types --test 'tests/*.test.ts'"
+	},
 	"repository": "github:Svtter/pi-usage-stats",
 	"peerDependencies": {
 		"@earendil-works/pi-coding-agent": "*"

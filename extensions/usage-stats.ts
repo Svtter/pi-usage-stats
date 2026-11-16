@@ -4,12 +4,16 @@
  * Footer status for the pi coding agent: prompt-cache hit rate and
  * output token speed, updated after every assistant response.
  *
- *   cache 87%/91% · 42.3 tok/s · 1.2k out
+ *   cache 99.5%/49.7% · 42.3 tok/s · 1.2k out
  *
- * - `cache 87%/91%` — prompt-cache hit rate of the last response and of
- *   the session so far: cacheRead / (input + cacheRead + cacheWrite).
- * - `42.3 tok/s` — average output speed of the last response, measured
- *   from message_start to message_end (includes TTFT and reasoning tokens).
+ * - `cache 99.5%/49.7%` — prompt-cache hit rate of the last response and
+ *   of the session so far: cacheRead / (input + cacheRead + cacheWrite).
+ *   Same formula as pi's built-in footer `CH` indicator.
+ * - `42.3 tok/s` — output tokens ÷ response duration. Duration comes from
+ *   pi-ai's `durationMs` (monotonic clock, measured from request start to
+ *   response end), so the figure includes time-to-first-token, prompt
+ *   processing, and reasoning tokens. Falls back to wall-clock
+ *   message_start → message_end when `durationMs` is absent.
  * - `1.2k out` — output tokens of the last response.
  */
 
@@ -43,8 +47,12 @@ export default function (pi: ExtensionAPI) {
 		totalPromptTokens += promptTokens;
 		totalCacheReadTokens += usage.cacheRead;
 
-		const elapsedMs =
-			responseStartMs > 0 ? Math.max(1, Date.now() - responseStartMs) : 0;
+		// Prefer pi-ai's monotonic request timing; fall back to the
+		// stream-open wall clock captured at message_start.
+		let elapsedMs = message.durationMs ?? 0;
+		if (elapsedMs <= 0 && responseStartMs > 0) {
+			elapsedMs = Math.max(1, Date.now() - responseStartMs);
+		}
 		responseStartMs = 0;
 
 		const theme = ctx.ui.theme;
@@ -56,11 +64,10 @@ export default function (pi: ExtensionAPI) {
 		const hitColor = hitRate >= 50 ? "success" : hitRate > 0 ? "warning" : "muted";
 
 		const parts = [
-			theme.fg(hitColor, `cache ${hitRate.toFixed(0)}%`) +
-				theme.fg("dim", `/${sessionHitRate.toFixed(0)}%`),
+			theme.fg(hitColor, `cache ${hitRate.toFixed(1)}%`) +
+				theme.fg("dim", `/${sessionHitRate.toFixed(1)}%`),
 		];
 
-		// Output speed of this response.
 		if (elapsedMs > 0 && usage.output > 0) {
 			const tokensPerSecond = usage.output / (elapsedMs / 1000);
 			parts.push(theme.fg("accent", `${tokensPerSecond.toFixed(1)} tok/s`));
